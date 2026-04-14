@@ -1,14 +1,18 @@
 import React from "react";
 import { MdEditNote, MdExitToApp } from "react-icons/md";
+import { useState } from "react";
+import NoteProressCard from "./NoteProressCard";
+const ActionCard = (props) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const { activePatient } = props;
 
-const ActionCard = () => {
     return (
         <div className="space-y-4">
             <h3 className="text-xl font-bold text-slate-900 tracking-tight">Hành động</h3>
             <div className="grid grid-cols-2 gap-4">
 
                 {/* Nút Ghi chú diễn biến */}
-                <button className="flex flex-col items-start p-6 bg-white border border-gray-100 rounded-[2rem] shadow-sm hover:shadow-md hover:border-slate-300 transition-all group text-left">
+                <button onClick={() => setIsModalOpen(true)} className="flex flex-col items-start p-6 bg-white border border-gray-100 rounded-[2rem] shadow-sm hover:shadow-md hover:border-slate-300 transition-all group text-left">
                     <div className="p-3 bg-slate-50 rounded-2xl mb-4 group-hover:bg-slate-100 transition-colors">
                         <MdEditNote size={28} className="text-slate-900" />
                     </div>
@@ -28,7 +32,11 @@ const ActionCard = () => {
                         <p className="text-slate-400 text-sm mt-1 font-medium">Viết lệnh xuất viện</p>
                     </div>
                 </button>
-
+                <NoteProressCard
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    patientName={activePatient.name}
+                />
             </div>
         </div>
     );

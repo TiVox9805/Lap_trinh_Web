@@ -3,9 +3,9 @@ import { MdPersonAdd, MdEdit, MdDelete } from "react-icons/md";
 import { useState } from "react";
 const AccountManagement = () => {
     const accounts = [
-        { id: 1, name: "BS. Nguyễn Văn A", email: "bsa@hospital.vn", role: "Bác sĩ", dept: "Nội Tim Mạch", status: "Hoạt động", date: "2024-01-15" },
-        { id: 2, name: "BS. Trần Thị B", email: "bsb@hospital.vn", role: "Bác sĩ", dept: "Ngoại Tổng Hợp", status: "Hoạt động", date: "2024-02-20" },
-        { id: 3, name: "Y tá Lê Văn C", email: "ytc@hospital.vn", role: "Y tá", dept: "-", status: "Hoạt động", date: "2024-03-10" },
+        { id: 1, name: "BS. Nguyễn Văn A", email: "bsa@hospital.vn", password: "password123", role: "Bác sĩ", dept: "Nội Tim Mạch", status: "Hoạt động", date: "2024-01-15" },
+        { id: 2, name: "BS. Trần Thị B", email: "bsb@hospital.vn", password: "password456", role: "Bác sĩ", dept: "Ngoại Tổng Hợp", status: "Hoạt động", date: "2024-02-20" },
+        { id: 3, name: "Y tá Lê Văn C", email: "ytc@hospital.vn", password: "password789", role: "Y tá", dept: "-", status: "Hoạt động", date: "2024-03-10" },
     ];
     const [showAddForm, setShowAddForm] = useState(false);
     return (
@@ -31,8 +31,16 @@ const AccountManagement = () => {
                             <input type="text" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all" />
                         </div>
                         <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chuyên Khoa</label>
+                            <input type="email" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all" />
+                        </div>
+                        <div className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Email</label>
                             <input type="email" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all" />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mật khẩu</label>
+                            <input type="password" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Vai trò</label>
@@ -63,6 +71,7 @@ const AccountManagement = () => {
                         <tr className="bg-slate-50 text-[11px] uppercase tracking-widest text-slate-400 font-bold">
                             <th className="px-6 py-4">Họ tên</th>
                             <th className="px-6 py-4">Email</th>
+                            <th className="px-6 py-4">Mật khẩu</th>
                             <th className="px-6 py-4">Vai trò</th>
                             <th className="px-6 py-4">Chuyên khoa</th>
                             <th className="px-6 py-4">Trạng thái</th>
@@ -74,6 +83,7 @@ const AccountManagement = () => {
                             <tr key={acc.id} className="hover:bg-slate-50 transition-colors">
                                 <td className="px-6 py-4 text-slate-900 font-bold">{acc.name}</td>
                                 <td className="px-6 py-4 text-slate-500">{acc.email}</td>
+                                <td className="px-6 py-4 text-slate-500">{acc.password}</td>
                                 <td className="px-6 py-4">
                                     <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase ${acc.role === 'Bác sĩ' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
                                         {acc.role}

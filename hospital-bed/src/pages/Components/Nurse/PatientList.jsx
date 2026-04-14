@@ -1,8 +1,24 @@
 import { MdSearch, MdExpandMore } from "react-icons/md";
-
+import { MdEditNote } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 const PatientList = () => {
-    // Dữ liệu mẫu (sẽ được thay thế bằng dữ liệu thực sau khi nhập viện)
-    const patients = [];
+    const navigate = useNavigate();
+    const patients = [
+        {
+            id: "BN001",
+            name: "Trần Minh Đức",
+            birthYear: 2005,
+            gender: "Nam",
+            department: "Sản",
+            room: "",
+            initialDiagnosis: "vỡ ối",
+            doctor: "BS. Nguyễn Văn B",
+            admittedDate: "2026-04-12",
+            daysCount: 2,
+            status: "chờ xếp giường",
+            actions: ["Xếp giường", "Chuyển khoa"]
+        }
+    ];
 
     return (
         <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 animate-in fade-in duration-500">
@@ -51,39 +67,51 @@ const PatientList = () => {
             </div>
 
             {/* Bảng danh sách bệnh nhân */}
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="border-b border-gray-100">
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Mã BN</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Họ và tên</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Năm sinh</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Khoa</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Giường</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Chẩn đoán</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Bác sĩ</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Ngày nhập</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm">Số ngày</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm text-center">Trạng thái</th>
-                            <th className="pb-4 font-bold text-slate-700 text-sm text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {patients.length > 0 ? (
-                            patients.map((p, idx) => (
-                                <tr key={idx} className="border-b border-gray-50 hover:bg-slate-50/50 transition-colors">
-                                    {/* Render dữ liệu ở đây */}
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="11" className="py-12 text-center text-gray-400 font-medium">
-                                    Không tìm thấy bệnh nhân
-                                </td>
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-50 text-left">
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[100px]">Mã BN</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[180px]">Họ và tên</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[100px]">Năm sinh</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[150px]">Khoa</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[100px]">Giường</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[150px]">Chẩn đoán</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[120px]">Bác sĩ</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[120px]">Ngày nhập</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[100px]">Số ngày</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[150px]">Trạng thái</th>
+                                <th className="px-4 py-4 text-sm font-bold text-slate-800 w-[80px] text-center">Thao tác</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {patients.map((p) => (
+                                <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-4 py-5 text-sm text-slate-700">{p.id}</td>
+                                    <td className="px-4 py-5 text-sm font-bold text-slate-900">{p.name}</td>
+                                    <td className="px-4 py-5 text-sm text-slate-600">{p.birthYear}</td>
+                                    <td className="px-4 py-5 text-sm text-slate-600">{p.department}</td>
+                                    <td className="px-4 py-5 text-sm text-slate-600 font-medium">{p.room}</td>
+                                    <td className="px-4 py-5 text-sm text-slate-600">{p.initialDiagnosis}</td>
+                                    <td className="px-4 py-5 text-sm text-slate-600">{p.doctor}</td>
+                                    <td className="px-4 py-5 text-sm text-slate-600">{p.admittedDate}</td>
+                                    <td className="px-4 py-5 text-sm text-slate-600">{p.daysCount}</td>
+                                    <td className="px-4 py-5">
+                                        <span className="bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-xs font-bold border border-amber-100">
+                                            {p.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-5 text-center">
+                                        <button onClick={() => navigate(`/nurse/beds`)} className="p-1.5 bg-slate-50 text-slate-400 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-all border border-slate-200">
+                                            <MdEditNote size={20} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
