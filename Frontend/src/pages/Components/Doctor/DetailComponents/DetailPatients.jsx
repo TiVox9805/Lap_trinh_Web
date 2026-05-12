@@ -27,6 +27,7 @@ const DetailPatients = (props) => {
         fetchHistory();
     }, [selectedId, activePatient?.id_ho_so]);
     if (!activePatient) return null;
+    console.log(history)
     return (
         <div className="animate-in slide-in-from-right-4 duration-500 space-y-6">
             {/* 1. Thông tin cá nhân */}
@@ -126,7 +127,17 @@ const InfoItem = ({ label, value, fullWidth = false, highlight = false }) => (
         </p>
     </div>
 );
-
+const VitalItem = ({ icon, label, value, unit = "" }) => (
+    <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            {icon}
+            <span>{label}</span>
+        </div>
+        <p className="text-sm font-bold text-slate-800">
+            {value ? `${value}${unit}` : "---"}
+        </p>
+    </div>
+);
 const InfoBox = ({ label, value, color = "bg-slate-50" }) => (
     <div className={`${color} p-5 rounded-2xl border border-gray-50/50 shadow-inner`}>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-2">{label}</p>

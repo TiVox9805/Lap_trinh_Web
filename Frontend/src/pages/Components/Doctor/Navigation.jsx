@@ -4,28 +4,31 @@ import { MdDashboard, MdPeople, MdHotel, MdDescription } from "react-icons/md";
 const Navigation = () => {
     const tabs = [
         { id: "ManagePatient", label: "Bệnh nhân", icon: <MdPeople size={20} /> },
-        { id: "DischargeProcess", label: "Quy trình xuất viện", icon: <MdDescription size={20} /> },
+        { id: "DischargeProcessDoctor", label: "Quy trình xuất viện", icon: <MdDescription size={20} /> },
 
     ];
 
     return (
-        <div className="bg-slate-200/50 p-1.5 rounded-2xl inline-flex gap-1 mb-10 border border-slate-100">
+        <nav className="inline-flex p-1.5 bg-slate-100/80 backdrop-blur-md rounded-[1.5rem] border border-slate-200/50 shadow-sm mb-10">
             {tabs.map((tab) => (
                 <NavLink
                     key={tab.id}
                     to={`/doctor/${tab.id}`}
-                    className={({ isActive }) =>
-                        `flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${isActive
-                            ? "bg-white text-slate-900 shadow-sm shadow-slate-200 border border-slate-50"
-                            : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
-                        }`
-                    }
+                    className={({ isActive }) => `
+                        relative flex items-center gap-2.5 px-6 py-2.5 rounded-2xl text-sm font-bold transition-all duration-300 group
+                        ${isActive
+                            ? "bg-white text-blue-600 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-slate-100"
+                            : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                        }
+                    `}
                 >
-                    {tab.icon}
-                    <span>{tab.label}</span>
+                    <span className="text-[20px] transition-transform duration-300 group-hover:scale-110">
+                        {tab.icon}
+                    </span>
+                    <span className="relative z-10">{tab.label}</span>
                 </NavLink>
             ))}
-        </div>
+        </nav>
     );
 };
 

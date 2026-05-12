@@ -1,0 +1,195 @@
+const pool = require('../config/db');
+
+const getReports = async (req, res) => {
+    try {
+        const stats = await pool.query(`
+             SELECT 
+                (SELECT COUNT(*) FROM users) as total_users,
+                (SELECT COUNT(*) FROM users WHERE role = 'Bác sĩ') as total_doctors,
+                (SELECT COUNT(*) FROM users WHERE role = 'Y tá') as total_nurses,
+                (SELECT COUNT(*) FROM hosonhapvien WHERE trang_thai_ho_so = 'Đang điều trị') as active_patients,
+                (SELECT COUNT(*) FROM giuong WHERE giuong.is_deleted=false) as total_beds,
+                (SELECT COUNT(*) FROM giuong WHERE trang_thai = 'Đang sử dụng') as occupied_beds,
+                (SELECT COUNT(*) FROM users Where status='Hoạt động' ) as active_account
+            FROM (SELECT 1) AS dummy;
+        `);
+
+        const data = stats.rows[0];
+
+        // Tính toán tỷ lệ lấp đầy
+        const totalBeds = parseInt(data.total_beds) || 0;
+        const occupiedBeds = parseInt(data.occupied_beds) || 0;
+        const occupancyRate = totalBeds > 0 ? ((occupiedBeds / totalBeds) * 100).toFixed(1) : 0;
+        res.json({
+            ...data,
+            occupancy_rate: occupancyRate + "%"
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+const updateStatusBed = async (req, res) => {
+    const bedId = req.params.id;
+    const { trang_thai, admin_id } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const result = await client.query(
+            "SELECT trang_thai FROM giuong WHERE id = $1",
+            [bedId]
+        );
+        const rows = result.rows;
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({ message: "Không tìm thấy giường bệnh" });
+        }
+        const currentStatus = rows[0].trang_thai;
+        if (currentStatus === "Đang sử dụng") {
+            return res.status(403).json({
+                success: false,
+                message: `Quyền Admin bị hạn chế: Không thể sửa giường đang ở trạng thái '${currentStatus}'.`
+            });
+        }
+
+        await client.query('UPDATE giuong SET trang_thai = $1 WHERE id = $2', [trang_thai, bedId]);
+        const logQuery = `
+            INSERT INTO lich_su_giuong (
+                giuong_id, 
+                nhan_vien_thuc_hien_id, 
+                hanh_dong, 
+                trang_thai_cu, 
+                trang_thai_moi, 
+                ghi_chu
+            ) VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+        await client.query(logQuery, [
+            bedId,
+            admin_id,
+            'Cập nhật trạng thái',
+            currentStatus,
+            trang_thai,
+            `Admin thay đổi trạng thái thủ công từ ${currentStatus} sang ${trang_thai}`
+        ]);
+        await client.query('COMMIT');
+        res.status(200).json({ success: true, message: "Cập nhật thành công" });
+    }
+    catch (error) {
+        console.error(error); // In ra màn hình console của Node.js
+        res.status(500).json({ message: "Lỗi hệ thống", detail: error.message });
+    }
+};
+const getBedHistory = async (req, res) => {
+    const bedId = req.params.id;
+    try {
+        const query = `
+                SELECT
+                    g.ma_giuong,
+                    lsg.trang_thai_cu,
+                    lsg.trang_thai_moi,
+                    lsg.hanh_dong,
+                    lsg.thoi_gian,
+                    u.fullname as nhan_vien_ten
+                FROM lich_su_giuong lsg
+                JOIN GIUONG g ON lsg.giuong_id = g.id
+                join users u on lsg.nhan_vien_thuc_hien_id = u.id
+                where g.id = $1
+                ORDER BY lsg.thoi_gian 
+        `;
+        const result = await pool.query(query, [bedId]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Lỗi hệ thống", detail: error.message });
+    }
+};
+const getTotalBeds = async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT g.id, g.ma_giuong, g.trang_thai, p.ten_phong, k.ten_khoa,k.id as khoa_id,b.ho_ten as ten_bn,b.id as benh_nhan_id,u.fullname as ten_bs
+            FROM giuong g
+            JOIN phong p ON g.phong_id = p.id
+            JOIN khoa k ON p.khoa_id = k.id
+            LEFT JOIN HoSoNhapVien h on h.giuong_id=g.id and h.trang_thai_ho_so='Đang điều trị'
+            LEFT JOIN BenhNhan b on b.id=h.benh_nhan_id 
+            LEFT JOIN Users u on u.id=h.bac_si_id
+            WHERE g.is_deleted = false
+            ORDER BY k.ten_khoa, p.ten_phong, g.ma_giuong`);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+const deleteBed = async (req, res) => {
+    const bedId = req.params.id;
+    const { admin_id } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const checkBed = await client.query('SELECT * FROM giuong WHERE id = $1', [bedId]);
+        if (checkBed.rows[0].trang_thai !== 'Trống') {
+            throw new Error('Không thể xóa giường đang sử dụng hoặc đang dọn dẹp');
+        }
+        await client.query(`UPDATE GIUONG SET is_deleted=true, trang_thai = 'Ngừng hoạt động',
+                 deleted_at = NOW() WHERE id = $1`, [bedId]);
+        await client.query(
+            `INSERT INTO lich_su_giuong (giuong_id, nhan_vien_thuc_hien_id, hanh_dong, trang_thai_cu, trang_thai_moi)
+             VALUES ($1, $2, 'Xóa giường', 'Trống', 'Ngừng hoạt động')`,
+            [bedId, admin_id]
+        );
+        await client.query('COMMIT');
+        res.status(200).json({ success: true, message: "Xóa giường thành công" });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ success: false, message: "Lỗi hệ thống", detail: error.message });
+    } finally {
+        client.release();
+    }
+};
+const addBed = async (req, res) => {
+    const { ma_giuong, phong_id, trang_thai, admin_id } = req.body;
+    if (!ma_giuong || !phong_id || !trang_thai || !admin_id) {
+        return res.status(400).json({ success: false, message: "Thiếu thông tin bắt buộc" });
+    }
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const checkMaGiuong = await client.query('SELECT * FROM giuong WHERE ma_giuong = $1 AND phong_id=$2', [ma_giuong, phong_id]);
+        if (checkMaGiuong.rows.length > 0) {
+            throw new Error('Mã giường đã tồn tại trong phòng này');
+        }
+        const roomResult = await client.query('SELECT ten_phong FROM phong WHERE id = $1', [phong_id]);
+        const tenPhong = roomResult.rows[0].ten_phong;
+        const match = tenPhong.match(/\d+/);
+        const soPhong = match ? match[0] : '';
+        if (!ma_giuong.includes(soPhong)) {
+            return res.status(400).json({
+                success: false,
+                message: `Mã giường (${ma_giuong}) không khớp với số phòng (${soPhong}) của phòng (${tenPhong})!`
+            });
+        }
+        const result = await client.query(
+            `INSERT INTO giuong (ma_giuong, phong_id, trang_thai,is_deleted) VALUES ($1, $2, $3, false) RETURNING *`,
+            [ma_giuong, phong_id, trang_thai]
+        );
+        const logQuery = `
+            INSERT INTO lich_su_giuong (
+                giuong_id,
+                nhan_vien_thuc_hien_id,
+                hanh_dong,
+                trang_thai_cu,
+                trang_thai_moi
+            ) VALUES ($1, $2, $3, $4, $5)
+        `;
+        await client.query(logQuery, [result.rows[0].id, admin_id, 'Thêm giường', null, trang_thai]);
+        await client.query('COMMIT');
+        res.status(201).json({ success: true, message: "Thêm giường thành công", bed: result.rows[0] });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ success: false, message: "Lỗi hệ thống", detail: error.message });
+    } finally {
+        client.release();
+    }
+};
+
+
+
+module.exports = { getReports, updateStatusBed, getBedHistory, getTotalBeds, deleteBed, addBed };  

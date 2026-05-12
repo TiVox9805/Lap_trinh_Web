@@ -19,9 +19,11 @@ const ArrangeBed = () => {
         }
     };
 
+    const userStr = sessionStorage.getItem('user');
+    const userObj = userStr ? JSON.parse(userStr) : null;
     const loadBeds = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/beds');
+            const res = await fetch(`http://localhost:5000/api/beds?khoa_id=${userObj?.khoa_id}`);
             const data = await res.json();
             setBeds(data);
         } catch (err) {
@@ -47,26 +49,29 @@ const ArrangeBed = () => {
 
     // --- LOGIC TÍNH TOÁN LEGEND (Dựa trên dữ liệu thực) ---
     const bedStats = {
+        tong: beds.length,
         trong: beds.filter(b => b.trang_thai === "Trống").length,
         suDung: beds.filter(b => b.trang_thai === "Đang sử dụng").length,
-        baoTri: beds.filter(b => b.trang_thai === "Bảo trì").length,
+        donDep: beds.filter(b => b.trang_thai === "Đang dọn dẹp").length,
     };
 
     const statuses = [
+        { label: "Tổng Giường", count: bedStats.tong, colorClass: "bg-slate-500" },
         { label: "Trống", count: bedStats.trong, colorClass: "bg-green-500" },
         { label: "Đang sử dụng", count: bedStats.suDung, colorClass: "bg-blue-500" },
-        { label: "Bảo trì", count: bedStats.baoTri, colorClass: "bg-gray-400" },
+        { label: "Đang dọn dẹp", count: bedStats.donDep, colorClass: "bg-amber-500" },
     ];
 
     const handleConfirmAssignment = async (hosoId) => {
         if (!targetBed) return;
         try {
             const response = await fetch('http://localhost:5000/api/nurse/assign-bed', {
-                method: 'PUT',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     hoso_id: hosoId,
-                    giuong_id: targetBed.id // Sử dụng ID từ DB
+                    giuong_id: targetBed.id,
+                    y_ta_id: userObj?.id
                 })
             });
 
@@ -83,91 +88,114 @@ const ArrangeBed = () => {
 
     // --- LOGIC LỌC DỮ LIỆU ---
     // Lưu ý: So sánh với bed.ten_khoa (tên cột sau khi JOIN ở Backend)
-    const filteredBeds = selectedKhoa === "Tất cả"
-        ? beds
-        : beds.filter(bed => bed.ten_khoa === selectedKhoa);
+    // const filteredBeds = selectedKhoa === "Tất cả"
+    //     ? beds
+    //     : beds.filter(bed => bed.ten_khoa === selectedKhoa);
 
     return (
-        <div className="flex flex-col gap-8">
-            {/* 1. Thanh Filter & Legend */}
-            <div className="flex justify-between items-center border border-gray-100 bg-white p-6 rounded-[2rem] shadow-sm">
-                <div className="flex items-center gap-3">
-                    <label className="text-sm font-bold text-gray-700">Khoa:</label>
-                    <select
-                        value={selectedKhoa}
-                        onChange={(e) => setSelectedKhoa(e.target.value)}
-                        className="border-none bg-gray-50 rounded-xl px-5 py-2.5 text-sm focus:ring-2 focus:ring-slate-200 w-56 font-semibold cursor-pointer"
-                    >
-                        <option value="Tất cả">Tất cả các khoa</option>
-                        {khoas.map(k => (
-                            <option key={k.id} value={k.ten_khoa}>{k.ten_khoa}</option>
-                        ))}
-                    </select>
+        <div className="flex flex-col gap-10 p-4 animate-in fade-in duration-700">
+            {/* 1. Header & Filter Section */}
+            <div className="flex flex-col md:flex-row justify-between items-center bg-white/80 backdrop-blur-md sticky top-4 z-20 p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-black text-slate-800 tracking-tight">
+                                Danh sách giường bệnh
+                            </h2>
+                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded-lg border border-indigo-100">
+                                {userObj?.ten_khoa}
+                            </span>
+                        </div>
+                        <p className="text-slate-400 text-xs font-bold mt-1">
+                            Quản lý và theo dõi tình trạng giường thời gian thực
+                        </p>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-8">
+                {/* Legend với hiệu ứng đếm số */}
+                <div className="flex items-center gap-6 bg-slate-50/50 p-2 rounded-3xl px-6 border border-slate-100">
                     {statuses.map((status) => (
-                        <div key={status.label} className="flex items-center gap-2.5">
-                            <span className={`w-2.5 h-2.5 rounded-full ${status.colorClass}`}></span>
-                            <p className="text-sm font-bold text-gray-600">
-                                {status.label} <span className="text-gray-400 font-medium">({status.count})</span>
-                            </p>
+                        <div key={status.label} className="flex items-center gap-3 group">
+                            <div className={`relative flex h-3 w-3`}>
+                                {status.label === "Trống" && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+                                <span className={`relative inline-flex rounded-full h-3 w-3 ${status.colorClass}`}></span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{status.label}</span>
+                                <span className="text-sm font-black text-slate-700 tabular-nums">{status.count}</span>
+                            </div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* 2. Danh sách giường */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredBeds.map((bed) => {
-                    // Đồng bộ biến trạng thái với Database
-                    const isMaintenance = bed.trang_thai === "Bảo trì";
+            {/* 2. Grid Danh sách giường */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                {beds.map((bed) => {
+                    const isMaintenance = bed.trang_thai === "Đang dọn dẹp";
                     const isOccupied = bed.trang_thai === "Đang sử dụng";
                     const isAvailable = bed.trang_thai === "Trống";
+
+                    // Dynamic Colors
+                    const theme = isMaintenance
+                        ? { bg: "bg-amber-50/50", border: "border-amber-100", text: "text-amber-700", accent: "bg-amber-500", btn: "bg-amber-100 text-amber-700 hover:bg-amber-200", shadow: "hover:shadow-amber-200" }
+                        : isOccupied
+                            ? { bg: "bg-blue-50/50", border: "border-blue-100", text: "text-blue-700", accent: "bg-blue-500", btn: "bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700", shadow: "hover:shadow-blue-200" }
+                            : { bg: "bg-emerald-50/50", border: "border-emerald-100", text: "text-emerald-700", accent: "bg-emerald-500", btn: "bg-slate-900 text-white shadow-slate-300", shadow: "hover:shadow-emerald-200" };
 
                     return (
                         <div
                             key={bed.id}
-                            className={`border rounded-[2.5rem] p-8 flex flex-col gap-8 shadow-sm transition-all duration-300 group ${isMaintenance ? "bg-gray-100 border-gray-200 opacity-70" :
-                                isOccupied ? "bg-blue-50 border-blue-200" :
-                                    "bg-[#ebfef5] border-green-100 hover:shadow-xl hover:shadow-green-100/50"
-                                }`}
+                            className={`relative overflow-hidden border-2 rounded-[2.5rem] p-6 transition-all duration-500 group flex flex-col justify-between min-h-[280px]
+                                ${theme.bg} ${theme.border} hover:-translate-y-2 shadow-sm hover:shadow-2xl ${theme.shadow}`}
                         >
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    {/* Hiển thị mã giường từ cột ma_giuong */}
-                                    <h3 className="text-[#166534] font-black text-2xl tracking-tight leading-none">
-                                        {bed.ma_giuong}
-                                    </h3>
-                                    <p className="text-green-700/60 font-bold mt-2 text-sm uppercase tracking-wider">
-                                        {bed.ten_phong} - {bed.ten_khoa}
-                                    </p>
-                                </div>
-                                <span className="text-2xl bg-white/50 p-3 rounded-2xl group-hover:scale-110 transition-transform">🛏️</span>
-                            </div>
+                            {/* Pattern chìm trang trí */}
+                            <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-[0.03] group-hover:scale-150 transition-transform duration-700 ${theme.accent}`} />
 
-                            <div className="flex">
-                                <span className={`px-5 py-1.5 rounded-full text-xs font-bold border shadow-sm ${isMaintenance ? "bg-gray-200 text-gray-600 border-gray-300" :
-                                    isOccupied ? "bg-blue-600 text-white border-blue-700" :
-                                        "bg-white text-[#166534] border-green-50"
-                                    }`}>
-                                    {bed.trang_thai}
-                                </span>
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${theme.accent} ${isAvailable && 'animate-pulse'}`} />
+                                            <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${theme.text} opacity-60`}>
+                                                {bed.ten_khoa}
+                                            </span>
+                                        </div>
+                                        <h3 className={`text-3xl font-black tracking-tighter ${theme.text}`}>
+                                            {bed.ma_giuong}
+                                        </h3>
+                                    </div>
+                                    <div className="p-3 bg-white rounded-2xl shadow-sm border border-inherit group-hover:rotate-12 transition-transform duration-500">
+                                        <span className="text-2xl">🛏️</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <p className={`flex items-center gap-2 text-sm font-bold ${theme.text}`}>
+                                        <svg className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                        {bed.ten_phong}
+                                    </p>
+                                    <span className={`inline-block px-3 py-1 rounded-lg text-[10px] font-black uppercase border-2 ${theme.border} ${theme.text} bg-white/50`}>
+                                        {bed.trang_thai}
+                                    </span>
+                                </div>
                             </div>
 
                             <button
-                                onClick={() => {
-                                    if (!isAvailable) return;
-                                    setTargetBed(bed);
-                                    setIsModalOpen(true);
-                                }}
+                                onClick={() => isAvailable && (setTargetBed(bed), setIsModalOpen(true))}
                                 disabled={!isAvailable}
-                                className={`w-full py-4 rounded-2xl font-bold text-sm transition-all shadow-lg active:scale-95 ${isAvailable
-                                    ? "bg-[#0f172a] text-white hover:bg-slate-800 shadow-slate-200"
-                                    : "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                                    }`}
+                                className={`relative z-10 w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.1em] transition-all duration-300 active:scale-95 shadow-lg
+                                    ${theme.btn} ${!isAvailable && 'cursor-not-allowed opacity-80 shadow-none'}`}
                             >
-                                {isAvailable ? 'Xếp giường' : isMaintenance ? 'Đang bảo trì' : 'Đã xếp bệnh nhân'}
+                                {isAvailable ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        Tiếp nhận <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                                    </span>
+                                ) : isMaintenance ? (
+                                    'Đang khử khuẩn'
+                                ) : (
+                                    'Đã có bệnh nhân'
+                                )}
                             </button>
                         </div>
                     );
@@ -179,7 +207,7 @@ const ArrangeBed = () => {
                 onClose={() => setIsModalOpen(false)}
                 selectedBed={targetBed}
                 patients={waitingPatients}
-                onConfirm={(hosoId) => handleConfirmAssignment(hosoId)}
+                onConfirm={handleConfirmAssignment}
             />
         </div>
     );

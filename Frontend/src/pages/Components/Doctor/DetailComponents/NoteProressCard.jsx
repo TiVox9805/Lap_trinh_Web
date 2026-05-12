@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { MdClose, MdAdd, MdFavorite, MdWaterDrop, MdThermostat, MdAir } from 'react-icons/md';
 
 const NoteProressCard = ({ isOpen, onClose, patientName, admissionId, doctorName }) => {
-    // 1. State cho danh sách diễn biến cũ
-    const [history, setHistory] = useState([]);
 
     // 2. State cho Form thêm mới
     const [formData, setFormData] = useState({
@@ -15,26 +13,9 @@ const NoteProressCard = ({ isOpen, onClose, patientName, admissionId, doctorName
         noi_dung: ""
     });
 
-    // 3. Lấy dữ liệu lịch sử từ DB khi mở Modal
-    const fetchHistory = async () => {
 
-        if (!admissionId) {
-            return alert("Lỗi: Không tìm thấy ID hồ sơ bệnh nhân!");
-        }
-        try {
-            const res = await fetch(`http://localhost:5000/api/admission/${admissionId}/history`);
-            const data = await res.json();
-            setHistory(data);
-        } catch (err) {
-            console.error("Lỗi lấy lịch sử:", err);
-        }
-    };
 
-    useEffect(() => {
-        if (isOpen) fetchHistory();
-    }, [isOpen, admissionId]);
 
-    // 4. Hàm xử lý lưu vào Database
     const handleSave = async () => {
         if (!formData.noi_dung) return alert("Vui lòng nhập nội dung diễn biến");
 
@@ -56,10 +37,9 @@ const NoteProressCard = ({ isOpen, onClose, patientName, admissionId, doctorName
             if (res.ok) {
                 // Reset form và tải lại danh sách
                 setFormData({ tieu_de: "Theo dõi hàng ngày", mach: "", huyet_ap: "", nhiet_do: "", nhip_tho: "", noi_dung: "" });
-                fetchHistory();
                 alert("Đã lưu diễn biến bệnh!");
             }
-        } catch (err) {
+        } catch {
             alert("Lỗi kết nối server");
         }
     };
@@ -111,27 +91,6 @@ const NoteProressCard = ({ isOpen, onClose, patientName, admissionId, doctorName
                         </div>
                     </div>
 
-                    {/* DANH SÁCH LỊCH SỬ TỪ DATABASE */}
-                    <div className="space-y-4">
-                        <h3 className="font-bold text-slate-800 border-l-4 border-blue-600 pl-3">Lịch sử theo dõi</h3>
-                        {history.length > 0 ? history.map((item) => (
-                            <div key={item.id} className="border border-slate-100 p-5 rounded-2xl bg-white hover:shadow-md transition-shadow">
-                                <div className="flex justify-between items-start mb-3">
-                                    <span className="text-[10px] font-bold px-2 py-1 bg-blue-50 text-blue-600 rounded-md uppercase tracking-wider">{item.tieu_de}</span>
-                                    <span className="text-[10px] text-slate-400 font-bold tracking-tight">{new Date(item.ngay_ghi).toLocaleString('vi-VN')}</span>
-                                </div>
-                                <p className="text-sm text-slate-600 leading-relaxed mb-4">{item.noi_dung}</p>
-                                <div className="grid grid-cols-4 gap-2 py-3 border-t border-slate-50">
-                                    <VitalBadge icon={<MdFavorite size={12} />} val={item.mach} color="text-red-500" />
-                                    <VitalBadge icon={<MdWaterDrop size={12} />} val={item.huyet_ap} color="text-blue-500" />
-                                    <VitalBadge icon={<MdThermostat size={12} />} val={item.nhiet_do} color="text-orange-500" />
-                                    <VitalBadge icon={<MdAir size={12} />} val={item.nhip_tho} color="text-emerald-500" />
-                                </div>
-                            </div>
-                        )) : (
-                            <p className="text-center text-slate-400 text-sm py-10 italic">Chưa có dữ liệu theo dõi.</p>
-                        )}
-                    </div>
                 </div>
             </div>
         </div>
@@ -152,11 +111,5 @@ const InputGroup = ({ label, placeholder, value, onChange }) => (
     </div>
 );
 
-const VitalBadge = ({ icon, val, color }) => (
-    <div className="flex items-center gap-1.5">
-        <span className={color}>{icon}</span>
-        <span className="text-xs font-bold text-slate-700">{val || "--"}</span>
-    </div>
-);
 
 export default NoteProressCard;

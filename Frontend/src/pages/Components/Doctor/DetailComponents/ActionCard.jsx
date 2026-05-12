@@ -1,11 +1,21 @@
 import React from "react";
 import { MdEditNote, MdExitToApp } from "react-icons/md";
 import { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import NoteProressCard from "./NoteProressCard";
 const ActionCard = (props) => {
     const [showNote, setShowNote] = useState(false);
     const { selectedPatient } = props;
-    console.log("Selected Patient in ActionCard:", selectedPatient?.id_ho_so);
+    const navigate = useNavigate();
+
+    const handleOpenDischargePage = () => {
+        if (!selectedPatient) return;
+
+        // Chuyển hướng sang trang quản lý và gửi kèm dữ liệu bệnh nhân
+        navigate('/doctor/DischargeProcessDoctor', {
+            state: { patientData: selectedPatient }
+        });
+    };
     return (
         <div className="space-y-4">
             <h3 className="text-xl font-bold text-slate-900 tracking-tight">Hành động</h3>
@@ -23,13 +33,15 @@ const ActionCard = (props) => {
                 </button>
 
                 {/* Nút Cho phép xuất viện */}
-                <button className="flex flex-col items-start p-6 bg-slate-900 border border-slate-900 rounded-[2rem] shadow-lg hover:bg-slate-800 transition-all text-left group">
+                <button
+                    onClick={handleOpenDischargePage}
+                    className="flex flex-col items-start p-6 bg-indigo-600 rounded-[2rem] shadow-indigo-500/20 hover:bg-indigo-500 transition-all text-left group">
                     <div className="p-3 bg-white/10 rounded-2xl mb-4 group-hover:bg-white/20 transition-colors">
                         <MdExitToApp size={28} className="text-white" />
                     </div>
                     <div>
                         <p className="font-bold text-white text-lg leading-tight">Cho phép xuất viện</p>
-                        <p className="text-slate-400 text-sm mt-1 font-medium">Viết lệnh xuất viện</p>
+                        <p className="text-slate-300 text-sm mt-1 font-medium">Viết lệnh xuất viện</p>
                     </div>
                 </button>
                 <NoteProressCard

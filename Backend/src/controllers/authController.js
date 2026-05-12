@@ -6,7 +6,21 @@ const login = async (req, res) => {
     try {
         // Truy vấn kiểm tra tài khoản, mật khẩu và trạng thái hoạt động
         const userQuery = await pool.query(
-            'SELECT id, fullname, role, khoa_id FROM users WHERE username = $1 AND password = $2 AND status = $3',
+            `SELECT 
+        u.id, 
+        u.fullname, 
+        u.username,
+        u.email_personal AS email,
+        u.phone,
+        u.role, 
+        u.khoa_id, 
+        k.ten_khoa ,
+        u.ma_nhan_vien
+     FROM users u
+     LEFT JOIN khoa k ON k.id = u.khoa_id 
+     WHERE u.username = $1 
+       AND u.password = $2 
+       AND u.status = $3`,
             [username, password, 'Hoạt động']
         );
 
@@ -26,5 +40,51 @@ const login = async (req, res) => {
         res.status(500).send('Lỗi máy chủ hệ thống');
     }
 };
+const changePassword = async (req, res) => {
+    const { userId, currentPassword, newPassword } = req.body;
 
-module.exports = { login };
+    try {
+        const userQuery = await pool.query(
+            'SELECT password FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (userQuery.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Người dùng không tồn tại'
+            });
+        }
+
+        const user = userQuery.rows[0];
+
+        if (user.password !== currentPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu hiện tại không đúng'
+            });
+
+        }
+        if (currentPassword === newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu mới phải khác mật khẩu hiện tại'
+            });
+        }
+        // Cập nhật mật khẩu mới
+        await pool.query(
+            'UPDATE users SET password = $1 WHERE id = $2',
+            [newPassword, userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Đổi mật khẩu thành công'
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Lỗi máy chủ hệ thống');
+    }
+};
+
+module.exports = { login, changePassword };

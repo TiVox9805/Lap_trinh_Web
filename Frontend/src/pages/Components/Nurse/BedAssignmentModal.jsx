@@ -6,6 +6,10 @@ const BedAssignmentModal = ({ isOpen, onClose, selectedBed, patients, onConfirm 
     const [selectedHosoId, setSelectedHosoId] = useState("");
 
     if (!isOpen) return null;
+    const filteredPatients = patients.filter(p => {
+        const matchKhoa = String(p.ten_khoa?.trim().toLowerCase()) === String(selectedBed?.ten_khoa.trim().toLowerCase());
+        return matchKhoa;
+    });
 
     const handleConfirm = () => {
         if (!selectedHosoId) {
@@ -31,7 +35,7 @@ const BedAssignmentModal = ({ isOpen, onClose, selectedBed, patients, onConfirm 
                 <div className="space-y-4">
                     <div className="relative">
                         <label className="text-sm font-bold text-slate-700 block mb-2">
-                            Bệnh nhân đang chờ ({patients.length})
+                            Bệnh nhân đang chờ ({filteredPatients.length})
                         </label>
                         <select
                             value={selectedHosoId}
@@ -39,7 +43,7 @@ const BedAssignmentModal = ({ isOpen, onClose, selectedBed, patients, onConfirm 
                             className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-600 focus:outline-none appearance-none cursor-pointer"
                         >
                             <option value="">-- Chọn bệnh nhân --</option>
-                            {patients.map(p => (
+                            {filteredPatients.map(p => (
                                 <option key={p.hoso_id} value={p.hoso_id}>
                                     {p.ho_ten} - {p.ten_khoa}
                                 </option>

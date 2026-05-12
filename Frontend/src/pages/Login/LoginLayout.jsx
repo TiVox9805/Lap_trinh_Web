@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MdLogin } from 'react-icons/md';
+import { MdLogin, MdMedicalServices, MdShield, MdPersonOutline, MdLockOutline } from 'react-icons/md';
 const LoginLayout = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [errorMsg, setErrorMsg] = useState('');
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setErrorMsg('');
         try {
             const response = await fetch('http://localhost:5000/api/auth/login', {
                 method: 'POST',
@@ -17,73 +19,124 @@ const LoginLayout = () => {
             });
             const data = await response.json();
             if (data.success) {
-                // Lưu thông tin người dùng vào localStorage
-                localStorage.setItem('user', JSON.stringify(data.user));
-                localStorage.setItem('isAuthenticated', 'true');
+                // Lưu thông tin người dùng vào sessionStorage
+                sessionStorage.setItem('user', JSON.stringify(data.user));
+                sessionStorage.setItem('isAuthenticated', 'true');
 
                 // Điều hướng dựa trên vai trò
                 if (data.user.role === 'Bác sĩ') {
                     navigate('/doctor');
                 } else if (data.user.role === 'Y tá') {
                     navigate('/nurse');
+                } else if (data.user.role === 'Admin') {
+                    navigate('/admin');
                 }
+
             } else {
-                alert(data.message);
+                setErrorMsg(data.message);
             }
         } catch (error) {
-            console.error('Lỗi khi đăng nhập:', error);
-            alert('Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.');
+
+            setErrorMsg('Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.');
         }
         finally {
             setLoading(false); // Kết thúc load cho dù thành công hay thất bại
         }
     }
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-            <div className="bg-white p-10 rounded-[2.5rem] shadow-xl w-full max-w-md border border-slate-100">
-                <div className="flex flex-col items-center mb-8">
-                    <div className="p-4 bg-slate-100 rounded-full mb-4 text-slate-900">
-                        <MdLogin size={32} />
+        <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-6 relative overflow-hidden">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/40 rounded-full blur-[120px]" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-100/40 rounded-full blur-[120px]" />
+
+            <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] w-full max-w-[480px] border border-white relative z-10 animate-in fade-in zoom-in-95 duration-700">
+
+                <div className="flex flex-col items-center mb-10">
+                    <div className="relative">
+                        <div className="p-5 bg-indigo-600 rounded-[2rem] shadow-xl shadow-indigo-200 text-white animate-bounce-slow">
+                            <MdMedicalServices size={40} />
+                        </div>
+                        <div className="absolute -bottom-2 -right-2 bg-white p-1.5 rounded-full shadow-md text-emerald-500">
+                            <MdShield size={20} />
+                        </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900">Đăng nhập</h1>
-                    <p className="text-slate-500 text-sm mt-1 font-medium">Hệ thống quản lý giường bệnh</p>
+
+                    <div className="mt-6 text-center">
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
+                            T&N <span className="text-indigo-600">HOSPITAL</span>
+                        </h1>
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-3 bg-slate-100 px-4 py-1.5 rounded-full inline-block">
+                            Hệ thống quản trị bệnh viện
+                        </p>
+                    </div>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-5">
+                    {errorMsg && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <strong className="font-bold">Lỗi! </strong>
+                            <span className="block sm:inline">{errorMsg}</span>
+                        </div>
+                    )}
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-800 ml-1">Tên đăng nhập</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="Nhập tên đăng nhập"
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all font-medium text-slate-700"
-                            required
-                        />
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <MdPersonOutline size={16} className="text-indigo-500" /> Tên đăng nhập
+                        </label>
+                        <div className="relative group">
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Nhập mã nhân viên hoặc username"
+                                className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-medium shadow-sm"
+                                required
+                            />
+                        </div>
                     </div>
 
+                    {/* Password Field */}
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-800 ml-1">Mật khẩu</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Nhập mật khẩu"
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all font-medium text-slate-700"
-                            required
-                        />
+                        <div className="flex justify-between items-center px-1">
+                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <MdLockOutline size={16} className="text-indigo-500" /> Mật khẩu
+                            </label>
+                        </div>
+                        <div className="relative">
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-slate-700 placeholder:text-slate-300 shadow-sm"
+                                required
+                            />
+                        </div>
                     </div>
+
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-4 bg-slate-950 text-white font-bold rounded-2xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 mt-2"
+                        className="w-full py-4 bg-indigo-600 text-white font-black text-sm uppercase tracking-widest rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 active:scale-[0.98] disabled:bg-slate-300 flex items-center justify-center gap-3 mt-4"
                     >
-                        {loading ? 'Đang kiểm tra...' : 'Đăng nhập'}
+                        {loading ? (
+                            <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <>
+                                Đăng nhập hệ thống <MdLogin size={20} />
+                            </>
+                        )}
                     </button>
                 </form>
 
+                {/* Footer Footer */}
+                <div className="mt-10 pt-8 border-t border-slate-100 text-center">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                        Thiết bị này được bảo mật bởi <br />
+                        <span className="text-slate-600">Phòng Công Nghệ Thông Tin - Bệnh Viện</span>
+                    </p>
+                </div>
             </div>
+
         </div>
     );
 }

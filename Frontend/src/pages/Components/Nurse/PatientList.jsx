@@ -1,28 +1,21 @@
-import { MdSearch, MdExpandMore, MdEditNote } from "react-icons/md";
+import { MdSearch, MdExpandMore, MdEditNote, MdDescription, MdHotel } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-
+import { useOutletContext } from "react-router-dom";
 const PatientList = () => {
     const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
     const [khoas, setKhoas] = useState([]);
     const [searchTerm, setSearchTerm] = useState(""); // Thêm state tìm kiếm
-    const [selectedKhoa, setSelectedKhoa] = useState("");
     const [selectedStatus, setSelectedStatus] = useState("");
-
-    const fetchData = async () => {
-        try {
-            const res = await fetch('http://localhost:5000/api/departments');
-            const data = await res.json();
-            setKhoas(data);
-        } catch (err) {
-            console.error("Lỗi load khoa:", err);
-        }
-    };
+    const { y_ta_id } = useOutletContext();
 
     const loadPatients = async () => {
+        if (!y_ta_id) {
+            return;
+        }
         try {
-            const res = await fetch('http://localhost:5000/api/patient-records');
+            const res = await fetch(`http://localhost:5000/api/patients/patient-records?y_ta_id=${y_ta_id}`);
             const data = await res.json();
             setPatients(data);
         } catch (err) {
@@ -31,20 +24,17 @@ const PatientList = () => {
     };
 
     useEffect(() => {
-        fetchData();
         loadPatients();
-    }, []);
+    }, [y_ta_id]); // Thêm y_ta_id vào dependency array để load lại khi y_ta_id thay đổi
 
     // --- XỬ LÝ LỌC & TÌM KIẾM ---
     const filteredPatients = patients.filter(p => {
         const matchSearch =
             p.ho_ten.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.chan_doan_ban_dau.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchKhoa = !selectedKhoa || selectedKhoa === "Tất cả" || p.ten_khoa === selectedKhoa;
         const matchStatus = !selectedStatus || selectedStatus === "Tất cả" || p.trang_thai_ho_so === selectedStatus;
 
-        return matchSearch && matchKhoa && matchStatus;
+        return matchSearch && matchStatus;
     });
 
     return (
@@ -68,22 +58,6 @@ const PatientList = () => {
                     />
                 </div>
 
-                {/* Bộ lọc Khoa */}
-                <div className="relative w-48">
-                    <select
-                        value={selectedKhoa}
-                        onChange={(e) => setSelectedKhoa(e.target.value)}
-                        className="w-full bg-[#f1f5f9] border-none rounded-2xl py-3 px-5 text-[15px] appearance-none cursor-pointer font-medium focus:ring-2 focus:ring-slate-200 outline-none"
-                    >
-                        <option value="">Tất cả khoa</option>
-                        {khoas.map(k => (
-                            <option key={k.id} value={k.ten_khoa}>{k.ten_khoa}</option>
-                        ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xl">
-                        <MdExpandMore />
-                    </div>
-                </div>
 
                 {/* Bộ lọc Trạng thái */}
                 <div className="relative w-48">
@@ -126,7 +100,7 @@ const PatientList = () => {
                                     <td className="px-4 py-5 text-sm text-slate-500 font-mono">#{p.id}</td>
                                     <td className="px-4 py-5 text-sm font-bold text-slate-900">
                                         {p.ho_ten}
-                                        <div className="text-[11px] font-normal text-slate-400">{p.gioi_tinh} - {p.nam_sinh}</div>
+                                        <div className="text-[11px] font-normal text-slate-400">{p.gioi_tinh} - {new Date(p.nam_sinh).toLocaleDateString('vi-VN')}</div>
                                     </td>
                                     <td className="px-4 py-5 text-sm text-slate-600">
                                         {p.ten_khoa}
@@ -153,9 +127,29 @@ const PatientList = () => {
                                         </span>
                                     </td>
                                     <td className="px-4 py-5 text-center">
-                                        <button onClick={() => navigate(`/nurse/beds`)} className="p-2 bg-white text-slate-400 rounded-xl hover:text-blue-600 transition-all border border-slate-200 shadow-sm">
-                                            <MdEditNote size={20} />
-                                        </button>
+                                        {p.trang_thai_ho_so === 'Chờ xếp giường' && (
+                                            <button
+                                                onClick={() => navigate(`/nurse/beds`, { state: { patientId: p.id } })}
+                                                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200"
+                                            >
+                                                <MdHotel size={16} />
+                                                Xếp giường
+                                            </button>
+                                        )}
+
+                                        {p.trang_thai_ho_so === 'Chờ xuất viện' && (
+                                            <button
+                                                onClick={() => navigate(`/nurse/DischargeProcessNurse`, { state: { patientId: p.id } })}
+                                                className="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white text-xs font-bold rounded-lg hover:bg-orange-600 transition-all shadow-sm shadow-orange-200"
+                                            >
+                                                <MdDescription size={16} />
+                                                Xác nhận XV
+                                            </button>
+                                        )}
+
+                                        {p.trang_thai_ho_so === 'Đang điều trị' && (
+                                            <span className="text-slate-300 text-xs italic">Đang theo dõi</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

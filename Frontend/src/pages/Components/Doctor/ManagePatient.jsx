@@ -3,16 +3,18 @@ import { MdAssignment } from "react-icons/md";
 import ActionCard from "./DetailComponents/ActionCard";
 import DetailPatients from "./DetailComponents/DetailPatients";
 
+
 const ManagePatient = () => {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState(null);
     const activePatient = patients.find(p => p.id === selectedId);
-
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    const userId = userData ? userData.id : null;
     const fetchPatients = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:5000/api/patients/inpatient');
+            const response = await fetch(`http://localhost:5000/api/patients/inpatient/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 setPatients(data);
@@ -27,59 +29,93 @@ const ManagePatient = () => {
         fetchPatients();
     }, []);
     return (
-        <div className="flex gap-6 h-[calc(100vh-200px)] animate-in fade-in duration-500">
-            {/* CỘT TRÁI: DANH SÁCH BỆNH NHÂN */}
-            <div className="w-1/4 flex flex-col gap-4">
-                <h3 className="font-bold text-slate-800 tracking-tight">
-                    Bệnh nhân nội trú ({patients.length})
-                </h3>
-                <div className="flex flex-col gap-3 overflow-y-auto pr-2">
+        <div className="flex gap-8 h-[calc(100vh-180px)] animate-in fade-in duration-700 bg-slate-50/50 p-1">
+            <div className="w-1/3 max-w-[350px] flex flex-col">
+                <div className="flex items-center justify-between mb-6 px-1">
+                    <h3 className="font-extrabold text-slate-900 text-xl tracking-tight">
+                        Bệnh nhân nội trú
+                    </h3>
+                    <span className="bg-sky-500 text-white text-xs font-black px-2.5 py-1 rounded-full shadow-sm"> {patients.length} </span>
+                </div>
+
+                <div className="relative mb-4">
+                    <input
+                        type="text"
+                        placeholder="Tìm tên, số giường..."
+                        className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all"
+                    />
+                </div>
+
+                <div className="flex flex-col gap-3 overflow-y-auto pr-3 custom-scrollbar">
                     {patients.length > 0 ? (
                         patients.map((p) => (
                             <div
                                 key={p.id}
                                 onClick={() => setSelectedId(selectedId === p.id ? null : p.id)}
-                                className={`p-5 rounded-[1.5rem] cursor-pointer transition-all relative ${selectedId === p.id
-                                    ? "bg-slate-900 text-white shadow-xl scale-[1.02]"
-                                    : "bg-white border border-gray-100 text-slate-800 hover:border-slate-300"
+                                className={`group p-4 rounded-[1.8rem] cursor-pointer transition-all duration-300 relative border ${selectedId === p.id
+                                    ? "bg-sky-50 border-sky-200 shadow-md"
+                                    : "bg-white border-slate-100 hover:border-sky-100"
                                     }`}
                             >
-                                <div className="flex justify-between items-start mb-1">
-                                    <p className="font-bold text-lg leading-tight">{p.ho_ten}</p>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${selectedId === p.id ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500"
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <p className={`font-bold text-base tracking-tight transition-colors ${selectedId === p.id ? "text-cyan-700" : "text-slate-800"
+                                            }`}>
+                                            {p.ho_ten}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-xs font-medium ${selectedId === p.id ? "text-cyan-700" : "text-slate-800"
+                                                }`}>
+                                                {new Date(p.nam_sinh).toLocaleDateString('vi-VN')} • {p.gioi_tinh}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span className={`text-[11px] px-3 py-1 rounded-xl font-bold tracking-wider transition-all ${selectedId === p.id
+                                        ? "bg-sky-500 text-white shadow-lg shadow-sky-200"
+                                        : "bg-slate-100 text-slate-500"
                                         }`}>
                                         {p.ma_giuong}
                                     </span>
                                 </div>
-                                <p className={`text-sm ${selectedId === p.id ? "text-slate-400" : "text-gray-500"}`}>
-                                    {p.nam_sinh} - {p.gioi_tinh}
-                                </p>
-                                <p className={`text-xs mt-1 ${selectedId === p.id ? "text-slate-500" : "text-slate-400"}`}>
-                                    {p.ten_khoa}
-                                </p>
+
+                                <div className={`mt-3 pt-3 border-t flex items-center gap-2 ${selectedId === p.id ? "border-slate-800" : "border-slate-50"
+                                    }`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${selectedId === p.id ? "bg-emerald-400" : "bg-emerald-500"}`}></div>
+                                    <p className={`text-[11px] font-semibold uppercase tracking-widest ${selectedId === p.id ? "text-cyan-700" : "text-slate-800"
+                                        }`}>
+                                        {p.ten_khoa}
+                                    </p>
+                                </div>
                             </div>
                         ))
                     ) : (
-                        <p className="text-gray-400 text-center mt-10">Không có bệnh nhân nội trú</p>
+                        <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-slate-200">
+                            <p className="text-slate-400 font-medium">Trống danh sách</p>
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* CỘT PHẢI: CHI TIẾT */}
-            <div className="flex-1 overflow-y-auto space-y-6 pr-2 pb-10 custom-scrollbar">
+            <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
                 {activePatient ? (
-                    <div className="animate-in slide-in-from-right-4 duration-500 space-y-6">
+                    <div className="h-full overflow-y-auto custom-scrollbar p-8 animate-in slide-in-from-bottom-4 duration-500">
                         <DetailPatients patients={patients} selectedId={selectedId} />
-                        <ActionCard patients={patients} selectedPatient={activePatient} />
+                        <div className="mt-8">
+                            <ActionCard patients={patients} selectedPatient={activePatient} />
+                        </div>
                     </div>
                 ) : (
-                    /* Màn hình trống khi chưa chọn bệnh nhân */
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-white/50 border border-dashed border-gray-200 rounded-[3rem]">
-                        <div className="p-6 bg-slate-100 rounded-full mb-4">
-                            <MdAssignment size={48} className="opacity-30" />
+                    <div className="h-full flex flex-col items-center justify-center text-center p-12">
+                        <div className="relative mb-6">
+                            <div className="relative p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 shadow-inner text-slate-300">
+                                <MdAssignment size={64} />
+                            </div>
                         </div>
-                        <p className="font-bold text-lg">Hồ sơ bệnh án</p>
-                        <p className="text-sm">Chọn một bệnh nhân để xem chi tiết và thực hiện hành động</p>
+                        <h4 className="text-xl font-bold text-slate-800 mb-2">Hồ sơ bệnh án điện tử</h4>
+                        <p className="text-slate-400 max-w-[280px] leading-relaxed text-sm font-medium">
+                            Chọn một bệnh nhân ở danh sách bên trái để xem chẩn đoán và quản lý thuốc.
+                        </p>
                     </div>
                 )}
             </div>

@@ -7,29 +7,36 @@ const AccountManagement = () => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [departments, setDepartments] = useState([]);
     const [newUser, setNewUser] = useState({
         fullname: '',
         username: '',
         password: '',
         role: 'Bác sĩ',
-        khoa_id: '',
+        ten_khoa: '',
         status: 'Hoạt động',
         email_personal: '',
         phone: ''
     });
-    const fetchUsers = async () => {
+    const fetchData = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/users');
-            const data = await response.json();
-            setUsers(data); // Đổ dữ liệu từ DB vào state
+            const [userRes, deptRes] = await Promise.all([
+                fetch('http://localhost:5000/api/users'),
+                fetch('http://localhost:5000/api/departments')
+            ]);
+            const userData = await userRes.json();
+            const deptData = await deptRes.json();
+
+            setUsers(userData);
+            setDepartments(deptData);
             setLoading(false);
         } catch (error) {
-            console.error('Lỗi lấy dữ liệu:', error);
+            console.error('Lỗi:', error);
             setLoading(false);
         }
     };
     useEffect(() => {
-        fetchUsers();
+        fetchData();
     }, []);
     const handleAddUser = async (e) => {
         e.preventDefault();
@@ -47,9 +54,9 @@ const AccountManagement = () => {
                 // Bạn có thể reload trang hoặc gọi lại hàm fetch danh sách để cập nhật bảng
                 setNewUser({ // Reset form về trống
                     fullname: '', username: '', password: '', role: 'Bác sĩ',
-                    khoa_id: '', status: 'Hoạt động', email_personal: '', phone: ''
+                    ten_khoa: '', status: 'Hoạt động', email_personal: '', phone: ''
                 });
-                fetchUsers();
+                fetchData();
                 setShowAddForm(false); // Ẩn form sau khi thêm thành công
             } else {
                 alert(data.message);
@@ -58,16 +65,41 @@ const AccountManagement = () => {
             console.error('Lỗi:', error);
         }
     };
+    const handleDeleteUser = async (userId) => {
+        if (window.confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/users/delete/${userId}`, {
+                    method: 'DELETE',
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Tài khoản đã được xóa');
+                    fetchData();
+                } else {
+                    alert('Xóa tài khoản thất bại: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                alert('Đã xảy ra lỗi khi xóa tài khoản');
+            }
+        }
+    };
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex justify-between items-end">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white shadow-xl shadow-slate-200/50">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Danh sách Tài khoản ({users.length})</h2>
-                    <p className="text-slate-500 text-sm">Quản lý tài khoản nhân viên và phân quyền hệ thống</p>
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                        <div className="w-2 h-8 bg-indigo-600 rounded-full" />
+                        Quản lý Nhân sự <span className="text-indigo-500">({users.length})</span>
+                    </h2>
+                    <p className="text-slate-500 font-medium ml-5">Hệ thống phân quyền và điều phối chuyên khoa</p>
                 </div>
-                <button onClick={() => setShowAddForm(!showAddForm)} className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
-                    <MdPersonAdd size={20} />
-                    Thêm Tài khoản
+                <button
+                    onClick={() => setShowAddForm(!showAddForm)}
+                    className="group flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-black transition-all shadow-lg shadow-indigo-200 active:scale-95"
+                >
+                    <MdPersonAdd size={22} className="group-hover:rotate-12 transition-transform" />
+                    THÊM TÀI KHOẢN
                 </button>
             </div>
 
@@ -82,7 +114,13 @@ const AccountManagement = () => {
                         </div>
                         <div className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Chuyên Khoa</label>
-                            <input type="text" value={newUser.khoa_id} onChange={(e) => setNewUser({ ...newUser, khoa_id: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all" />
+                            <select value={newUser.khoa_id} onChange={(e) => setNewUser({ ...newUser, khoa_id: parseInt(e.target.value) })} className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 focus:outline-none">
+                                {departments.map((dept) => (
+                                    <option key={dept.id} value={dept.id}>
+                                        {dept.ten_khoa}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tài khoản</label>
@@ -145,11 +183,11 @@ const AccountManagement = () => {
                                 <td className="px-6 py-4 text-slate-500">{user.username}</td>
                                 <td className="px-6 py-4 text-slate-500">{user.password}</td>
                                 <td className="px-6 py-4">
-                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase ${user.role === 'BAC_SI' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase ${user.role === 'Bác sĩ' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
                                         {user.role}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 text-slate-500">{user.khoa_id}</td>
+                                <td className="px-6 py-4 text-slate-500">{user.ten_khoa}</td>
                                 <td className="px-6 py-4">
                                     <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md w-fit text-[11px] font-bold">
                                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
@@ -160,8 +198,7 @@ const AccountManagement = () => {
                                 <td className="px-6 py-4 text-slate-500">{user.phone}</td>
                                 <td className="px-6 py-4">
                                     <div className="flex justify-center gap-2">
-                                        <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-lg shadow-sm transition-all"><MdEdit size={18} /></button>
-                                        <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg shadow-sm transition-all"><MdDelete size={18} /></button>
+                                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg shadow-sm transition-all"><MdDelete size={18} /></button>
                                     </div>
                                 </td>
                             </tr>

@@ -2,39 +2,71 @@ import LayoutNurse from "../pages/Nurse/LayoutNurse";
 import Overview from "../pages/Components/Overview";
 import PatientList from "../pages/Components/Nurse/PatientList";
 import ArrangeBed from "../pages/Components/Nurse/ArrangeBed";
+import DischargeProcessNurse from "../pages/Components/Nurse/DischargeProcess";
+import DischargeProcessDoctor from "../pages/Components/Doctor/DischargeProcess";
+
 import LayoutDoctor from "../pages/Doctor/LayoutDoctor";
-import DischargeProcess from "../pages/Components/Doctor/DischargeProcess";
 import ManagePatient from "../pages/Components/Doctor/ManagePatient";
 import LayoutAdmin from "../pages/Admin/LayoutAdmin";
 import AccountsManage from "../pages/Components/Admin/AccountManage";
 import Reports from "../pages/Components/Admin/SystemReport";
 import LoginLayout from "../pages/Login/LoginLayout";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
+import AdminBedMap from "../pages/Components/Admin/AdminBedMap"
+import UserSettings from "../pages/shared/UserSettings";
 const AppRoutes = () => {
     return (
         <BrowserRouter>
             <Routes>
                 <Route path="/login" element={<LoginLayout />} />
-                <Route path="/" element={<Navigate to="/nurse/overview" replace />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
 
-                <Route path="/nurse" element={<LayoutNurse />}>
+                <Route
+                    path="/nurse"
+                    element={
+                        <ProtectedRoute allowedRole="Y tá">
+                            <LayoutNurse />
+                        </ProtectedRoute>
+                    }
+                >
                     <Route index element={<Navigate to="overview" replace />} />
-
                     <Route path="overview" element={<Overview />} />
                     <Route path="patients" element={<PatientList />} />
                     <Route path="beds" element={<ArrangeBed />} />
+                    <Route path="DischargeProcessNurse" element={<DischargeProcessNurse />} />
+                    <Route path="settings" element={<UserSettings />} />
                 </Route>
-                <Route path="/doctor" element={<LayoutDoctor />}>
+                <Route
+                    path="/doctor"
+                    element={
+                        <ProtectedRoute allowedRole="Bác sĩ">
+                            <LayoutDoctor />
+                        </ProtectedRoute>
+                    }
+                >
                     <Route index element={<Navigate to="ManagePatient" replace />} />
-                    <Route path="DischargeProcess" element={<DischargeProcess />} />
+                    <Route path="DischargeProcessDoctor" element={<DischargeProcessDoctor />} />
                     <Route path="ManagePatient" element={<ManagePatient />} />
+                    <Route path="settings" element={<UserSettings />} />
                 </Route>
-                <Route path="/admin" element={<LayoutAdmin />}>
+                <Route
+                    path="/admin"
+                    element={
+                        <ProtectedRoute allowedRole="Admin">
+                            <LayoutAdmin />
+                        </ProtectedRoute>
+                    }
+                >
                     <Route index element={<Navigate to="accounts" replace />} />
                     <Route path="accounts" element={<AccountsManage />} />
-                    <Route path="reports" element={<Reports />} />
+                    <Route path="reports">
+                        <Route index element={<Reports />} />
+                        <Route path="/admin/reports/AdminBedMap" element={<AdminBedMap />} />
+                    </Route>
+                    <Route path="settings" element={<UserSettings />} />
                 </Route>
-
+                <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
         </BrowserRouter>
     );

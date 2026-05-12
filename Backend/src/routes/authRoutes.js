@@ -5,5 +5,6 @@ const authController = require('../controllers/authController');
 
 // Định nghĩa route POST cho login
 router.post('/login', authController.login);
+router.post('/change-password', authController.changePassword);
 
 module.exports = router;

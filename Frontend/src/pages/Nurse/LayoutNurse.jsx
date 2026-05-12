@@ -1,53 +1,93 @@
 import { useState, useEffect } from "react";
 import Navigation from "../Components/Nurse/Navigation";
-import { MdLogout } from "react-icons/md";
+import { MdLogout, MdHealthAndSafety, MdSettings } from "react-icons/md";
 import { Outlet } from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
+import useLogout from "../../hooks/useLogout";
 const LayoutNurse = () => {
     const [nurseName, setNurseName] = useState('Y tá');
-
+    const [y_ta_id, setYtaId] = useState(null);
+    const logout = useLogout();
+    const userStr = sessionStorage.getItem('user');
+    const userObj = userStr ? JSON.parse(userStr) : null;
+    const isSettingsPage = location.pathname.includes('settings');
+    const navigate = useNavigate();
     useEffect(() => {
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            const user = JSON.parse(userData);
-            if (user.fullname) setNurseName(user.fullname);
+        if (userObj?.fullname && userObj?.id) {
+            setNurseName(userObj.fullname);
+            setYtaId(userObj.id);
         }
-    }, []);
+    }, [userObj]);
 
     return (
         <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 font-san">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-[28px] font-bold text-slate-900 leading-tight">
-                        Quản lý Bệnh nhân Nội trú - Y tá
-                    </h1>
-                    <p className="text-slate-500 text-sm font-medium mt-0.5">
-                        Hệ thống quản lý giường bệnh và theo dõi diễn biến
-                    </p>
-                </div>
+            <div className="flex flex-col md:flex-row justify-between items-center bg-white/80 backdrop-blur-md top-4 z-20 p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 gap-6 transition-all duration-300 mb-8">
 
-                <div className="flex items-center gap-6">
-                    <div className="h-8 w-[1px] bg-slate-200"></div>
-                    <div className="flex items-center gap-3">
-                        <div className="text-right">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Y tá</p>
-                            <p className="text-sm font-bold text-slate-900">Hi, {nurseName}</p>
+                {/* Cụm trái: Tiêu đề & Thông tin Khoa */}
+                <div onClick={() => { navigate("/nurse") }} className="cursor-pointer flex items-center gap-6">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                        <MdHealthAndSafety size={32} />
+                    </div>
+
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-900 leading-tight tracking-tight">
+                            Quản lý Bệnh Nhân Nội trú - Y tá
+                        </h1>
+                        <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-1.5 px-3 py-0.5 bg-blue-50 rounded-full border border-blue-100">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                </span>
+                                <span className="text-[11px] font-black text-blue-700 uppercase tracking-wider">
+                                    {userObj?.ten_khoa}
+                                </span>
+                            </div>
                         </div>
-                        <button
-                            onClick={() => console.log("Logout clicked")}
-                            className="p-2.5 bg-red-50 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-all duration-300 group"
-                            title="Đăng xuất"
-                        >
-                            <MdLogout size={20} className="group-hover:scale-110 transition-transform" />
-                        </button>
                     </div>
                 </div>
-            </div>
 
-            <Navigation />
+                <div className="flex items-center gap-6 bg-slate-50/50 p-2 pr-4 rounded-3xl border border-slate-100">
+
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[1.2rem] flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                                <span className="text-xl font-black">{userObj?.fullname?.charAt(0) || "Y"}</span>
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-4 border-white rounded-full"></div>
+                        </div>
+
+                        <div className="text-left">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none mb-1">Phiên trực</p>
+                            <p className="text-sm font-black text-slate-700">Hi, {nurseName}</p>
+                        </div>
+                    </div>
+
+                    <div className="h-8 w-[1px] bg-slate-200"></div>
+                    <button
+                        onClick={() =>
+                            navigate('/nurse/settings')
+
+                        }
+                        className="group p-3 bg-white text-slate-400 rounded-2xl border border-slate-100 shadow-sm hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-300 active:scale-90"
+                        title="Cài đặt tài khoản"
+                    >
+                        <MdSettings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
+                    </button>
+                    <button
+                        onClick={logout}
+                        className="group p-3 bg-white text-red-500 rounded-2xl border border-red-50 shadow-sm hover:bg-red-500 hover:text-white transition-all duration-300 active:scale-90"
+                        title="Đăng xuất"
+                    >
+                        <MdLogout size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+                    </button>
+                </div>
+            </div>
+            {!isSettingsPage &&
+                <Navigation />}
 
             <div className="mt-4">
-                <Outlet />
+                <Outlet context={{ y_ta_id }} />
             </div>
         </div>
     );
