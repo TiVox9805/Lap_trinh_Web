@@ -9,4 +9,6 @@ router.post('/nurse/assign-bed', nurseController.assignBed);
 router.get('/nurse/overview-stats', nurseController.getOverviewStats);
 router.get('/nurse/pending-actions/:nurse_id', nurseController.getPendingActions);
 router.get('/rooms', bedsController.getAllRooms);
+router.get('/nurse-task', nurseController.getNurseTasks);
+router.patch('/orders/:orderId/complete', nurseController.completeOrder)
 module.exports = router;

@@ -94,13 +94,19 @@ const getOverviewStats = async (req, res) => {
         const beds = await pool.query('SELECT COUNT(*) FROM Giuong g JOIN phong p ON g.phong_id = p.id WHERE p.khoa_id = $1 AND g.is_deleted=false', [khoa_id]);
         const occupiedBeds = await pool.query("SELECT COUNT(*) FROM Giuong g JOIN phong p ON g.phong_id = p.id  WHERE trang_thai = 'Đang sử dụng' AND p.khoa_id = $1", [khoa_id]);
         const cleanBeds = await pool.query("SELECT COUNT(*) FROM Giuong g JOIN phong p ON g.phong_id = p.id WHERE trang_thai = 'Đang dọn dẹp' AND p.khoa_id = $1", [khoa_id]);
-        const deptStats = await pool.query(`
-   SELECT k.ten_khoa, COUNT(hs.id) as so_luong
-    FROM Khoa k
-    LEFT JOIN HoSoNhapVien hs ON k.id = hs.khoa_id AND hs.trang_thai_ho_So!='Đã xuất viện'
-    GROUP BY k.ten_khoa
-`);
-
+        const roomStats = await pool.query(`
+            SELECT 
+                p.ten_phong, 
+                COUNT(DISTINCT hs.id) as so_luong,
+                COUNT(DISTINCT g.id) as so_luong_g
+            FROM Phong p
+            JOIN giuong g on g.phong_id= p.id
+            LEFT JOIN HoSoNhapVien hs ON hs.giuong_id  = g.id
+            AND hs.trang_thai_ho_So != 'Đã xuất viện'
+            WHERE p.khoa_id = $1
+            GROUP BY p.id, p.ten_phong
+            ORDER BY p.ten_phong ASC
+    `, [khoa_id])
         const totalP = parseInt(totalPatients.rows[0].count) || 0;
         const treatmentP = parseInt(inTreatment.rows[0].count) || 0;
         const waitingP = parseInt(waiting.rows[0].count) || 0;
@@ -124,9 +130,10 @@ const getOverviewStats = async (req, res) => {
                 clean: cleanB,
                 empty: emptyB
             },
-            departments: deptStats.rows.map(row => ({
-                name: row.ten_khoa,
-                count: parseInt(row.so_luong)
+            rooms: roomStats.rows.map(row => ({
+                name: row.ten_phong,
+                count: parseInt(row.so_luong),
+                countG: parseInt(row.so_luong_g)
             }))
         });
     } catch (error) {
@@ -148,4 +155,68 @@ const getPendingActions = async (req, res) => {
         res.status(500).json({ error: "Lỗi lấy thông báo" });
     }
 };
-module.exports = { waitingList, assignBed, getnurseInfo, getOverviewStats, getPendingActions };
+const getNurseTasks = async (req, res) => {
+    const { y_ta_id } = req.query;
+    if (!y_ta_id) {
+        return res.status(400).json({
+            message: "Thiếu thông tin: Mã y tá!"
+        });
+    }
+    try {
+        const nurseTasks = await pool.query(
+            `SELECT yl.*, bn.ho_ten, g.ma_giuong, p.ten_phong, u.fullname as ten_bac_si
+             FROM ylenh yl
+             JOIN hosonhapvien nv ON yl.ho_so_id = nv.id
+             JOIN benhnhan bn on bn.id=nv.benh_nhan_id
+             JOIN giuong g on nv.giuong_id=g.id
+             JOIN phong p on g.phong_id=p.id
+             JOIN users u on u.id=yl.bac_si_id 
+             WHERE nv.y_ta_id = $1
+             ORDER BY yl.thoi_gian_chi_dinh DESC;`,
+            [y_ta_id]);
+        res.status(200).json(nurseTasks.rows);
+    } catch (err) {
+        console.error("Lỗi lấy danh sách công việc y tá:", err);
+        res.status(500).json({
+            message: "Lỗi hệ thống",
+            error: err.message
+        });
+    }
+
+};
+const completeOrder = async (req, res) => {
+    const { orderId } = req.params;
+    if (!orderId) {
+        return res.status(400).json({
+            success: false,
+            message: "Thiếu thông tin: Mã y lệnh cần cập nhật!"
+        });
+    }
+    try {
+        const updateOrder = await pool.query(`
+            UPDATE ylenh 
+             SET trang_thai = 'Đã hoàn thành' 
+             WHERE id = $1 
+             RETURNING *;
+            `, [orderId]);
+        if (updateOrder.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Không tìm thấy y lệnh này trong hệ thống!"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            message: "Cập nhật trạng thái y lệnh hoàn thành!",
+            data: updateOrder.rows[0]
+        });
+    } catch (err) {
+        console.error("Lỗi khi cập nhật hoàn thành y lệnh:", err);
+        res.status(500).json({
+            success: false,
+            message: "Lỗi hệ thống không thể cập nhật trạng thái",
+            error: err.message
+        });
+    }
+};
+module.exports = { waitingList, assignBed, getnurseInfo, getOverviewStats, getPendingActions, getNurseTasks, completeOrder };

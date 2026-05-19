@@ -10,11 +10,8 @@ const ActionCard = (props) => {
 
     const handleOpenDischargePage = () => {
         if (!selectedPatient) return;
-
-        // Chuyển hướng sang trang quản lý và gửi kèm dữ liệu bệnh nhân
-        navigate('/doctor/DischargeProcessDoctor', {
-            state: { patientData: selectedPatient }
-        });
+        console.log("Dữ liệu bệnh nhân đang chọn:", selectedPatient);
+        navigate(`/doctor/DischargeProcessDoctor/${selectedPatient.benh_nhan_id}`);
     };
     return (
         <div className="space-y-4">

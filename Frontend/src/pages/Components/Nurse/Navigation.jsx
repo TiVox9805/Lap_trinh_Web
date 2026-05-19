@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 const Navigation = () => {
     const tabs = [
         { id: "overview", label: "Tổng quan", icon: <MdDashboard size={20} /> },
-        { id: "patients", label: "Bệnh nhân", icon: <MdPeople size={20} /> },
+        { id: "TaskList", label: "Nhiệm vụ", icon: <MdPeople size={20} /> },
         { id: "beds", label: "Giường bệnh", icon: <MdHotel size={20} /> },
         { id: "DischargeProcessNurse", label: "Quy trình xuất viện", icon: <MdDescription size={20} /> },
 

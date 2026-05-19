@@ -9,7 +9,7 @@ const ManagePatient = () => {
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState(null);
     const activePatient = patients.find(p => p.id === selectedId);
-    const userData = JSON.parse(localStorage.getItem("userData"));
+    const userData = JSON.parse(sessionStorage.getItem("user"));
     const userId = userData ? userData.id : null;
     const fetchPatients = async () => {
         try {

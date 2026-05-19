@@ -3,7 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 
 // Các đường dẫn API
-router.get('/reports', adminController.getReports);
+router.get('/reports/:selectedMonth', adminController.getReports);
 router.put('/managebeds/:id', adminController.updateStatusBed);
 router.get('/bed-history/:id', adminController.getBedHistory);
 router.get('/totalbeds', adminController.getTotalBeds);

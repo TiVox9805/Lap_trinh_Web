@@ -8,7 +8,8 @@ const getPatientRecords = async (req, res) => {
             SELECT h.id, b.ho_ten, b.nam_sinh, b.gioi_tinh, k.ten_khoa, 
                    g.ma_giuong, p.ten_phong, u.fullname as bac_si, 
                    h.khoa_id,h.chan_doan_ban_dau, h.thoi_gian_nhap_vien, h.trang_thai_ho_so,
-                   (CURRENT_DATE::date - h.thoi_gian_nhap_vien::date) as so_ngay
+                   (CURRENT_DATE::date - h.thoi_gian_nhap_vien::date) as so_ngay,
+                   h.cap_do as cap_do_cham_soc
             FROM HoSoNhapVien h
             JOIN BenhNhan b ON h.benh_nhan_id = b.id
             JOIN Khoa k ON h.khoa_id = k.id

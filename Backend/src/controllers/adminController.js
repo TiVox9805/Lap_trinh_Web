@@ -1,27 +1,41 @@
 const pool = require('../config/db');
 
 const getReports = async (req, res) => {
+    const { selectedMonth } = req.params;
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const startDate = `${year}-${month}-01`;
+    const endDate = month === 12
+        ? `${year + 1}-01-01`
+        : `${year}-${month + 1}-01`;
     try {
         const stats = await pool.query(`
              SELECT 
-                (SELECT COUNT(*) FROM users) as total_users,
-                (SELECT COUNT(*) FROM users WHERE role = 'Bác sĩ') as total_doctors,
-                (SELECT COUNT(*) FROM users WHERE role = 'Y tá') as total_nurses,
+                (SELECT COUNT(*) FROM users WHERE created_at< $1 ) as total_users,
+                (SELECT COUNT(*) FROM users WHERE role = 'Bác sĩ' AND created_at<$1) as total_doctors,
+                (SELECT COUNT(*) FROM users WHERE role = 'Y tá' AND created_at<$1) as total_nurses,
+                (SELECT COUNT(*) FROM hosonhapvien WHERE thoi_gian_nhap_vien<$1 AND thoi_gian_nhap_vien>=$2) as total_patients_monthly,   
                 (SELECT COUNT(*) FROM hosonhapvien WHERE trang_thai_ho_so = 'Đang điều trị') as active_patients,
+                (SELECT COUNT(*) FROM hosonhapvien WHERE trang_thai_ho_so = 'Đang điều trị' AND thoi_gian_nhap_vien<$1 AND thoi_gian_nhap_vien>=$2) as new_active_patients,
+                (SELECT COUNT(*) FROM hosonhapvien WHERE trang_thai_ho_so = 'Đã xuất viện' AND ngay_xuat_vien<$1 AND ngay_xuat_vien>=$2) as discharge_patients,                
                 (SELECT COUNT(*) FROM giuong WHERE giuong.is_deleted=false) as total_beds,
+                (SELECT COUNT(*) FROM giuong WHERE giuong.is_deleted=false AND created_at<$1 AND (deleted_at>$1 or deleted_at IS NULL) )as total_beds_month,
                 (SELECT COUNT(*) FROM giuong WHERE trang_thai = 'Đang sử dụng') as occupied_beds,
                 (SELECT COUNT(*) FROM users Where status='Hoạt động' ) as active_account
             FROM (SELECT 1) AS dummy;
-        `);
+        `, [endDate, startDate]);
 
         const data = stats.rows[0];
 
         // Tính toán tỷ lệ lấp đầy
         const totalBeds = parseInt(data.total_beds) || 0;
         const occupiedBeds = parseInt(data.occupied_beds) || 0;
+        const total_patients_monthly = parseInt(data.total_patients_monthly) || 0;
+        const total_beds_month = parseInt(data.total_beds_month) || 0;
+        const occupancyRateMonth = total_patients_monthly > 0 && total_beds_month > 0 ? ((total_patients_monthly / total_beds_month) * 100).toFixed(1) : 0;
         const occupancyRate = totalBeds > 0 ? ((occupiedBeds / totalBeds) * 100).toFixed(1) : 0;
         res.json({
             ...data,
+            occupancy_Rate_Month: occupancyRateMonth + "%",
             occupancy_rate: occupancyRate + "%"
         });
     } catch (err) {

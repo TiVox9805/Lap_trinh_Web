@@ -22,6 +22,7 @@ const Admission = ({ isOpen, onClose, onRefresh }) => {
         ly_do: '',
         benh_su: '',
         nhom_mau: '',
+        cap_do: ''
     });
 
     useEffect(() => {
@@ -78,7 +79,7 @@ const Admission = ({ isOpen, onClose, onRefresh }) => {
                 setFormData({
                     ho_ten: '', nam_sinh: '', gioi_tinh: '', so_dien_thoai: '',
                     dia_chi: '', so_bhyt: '', khoa_id: userData.khoa_id || '',
-                    bac_si_id: userData.id || '',
+                    bac_si_id: userData.id || '', y_ta_id: '', nhom_mau: '', cap_do: '',
                     chan_doan: '', ly_do: '', benh_su: ''
                 });
                 onClose();
@@ -136,8 +137,8 @@ const Admission = ({ isOpen, onClose, onRefresh }) => {
                                 </div>
 
                                 <div className="col-span-1">
-                                    <label className="block text-[13px] font-bold text-slate-700 mb-2 ml-1">Năm sinh <span className="text-red-500">*</span></label>
-                                    <input name="nam_sinh" value={formData.nam_sinh} onChange={handleChange} type="number" placeholder="YYYY" className={inputClass} required />
+                                    <label className="block text-[13px] font-bold text-slate-700 mb-2 ml-1">Ngày sinh <span className="text-red-500">*</span></label>
+                                    <input name="nam_sinh" value={formData.nam_sinh} onChange={handleChange} type="date" className={inputClass} required />
                                 </div>
 
                                 <div className="col-span-1 relative">
@@ -205,7 +206,7 @@ const Admission = ({ isOpen, onClose, onRefresh }) => {
                                     <label className="block text-[13px] font-bold text-slate-700 mb-2 ml-1">Nhóm máu <span className="text-red-500">*</span></label>
                                     <div className="relative">
                                         <select name="nhom_mau" value={formData.nhom_mau} onChange={handleChange} className={`${inputClass} appearance-none cursor-pointer pr-10`} required>
-                                            <option value="">Chọn...</option>
+                                            <option value="">--Chọn nhóm máu--</option>
                                             <option value="A+">Nhóm A+</option>
                                             <option value="A-">Nhóm A-</option>
                                             <option value="B+">Nhóm B+</option>
@@ -214,6 +215,18 @@ const Admission = ({ isOpen, onClose, onRefresh }) => {
                                             <option value="AB-">Nhóm AB-</option>
                                             <option value="O+">Nhóm O+</option>
                                             <option value="O-">Nhóm O-</option>
+                                        </select>
+                                        <MdExpandMore className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xl" />
+                                    </div>
+                                </div>
+                                <div className="relative">
+                                    <label className="block text-[13px] font-bold text-slate-700 mb-2 ml-1">Cấp độ chăm sóc <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <select name="cap_do" value={formData.cap_do} onChange={handleChange} className={`${inputClass} appearance-none cursor-pointer pr-10`} required>
+                                            <option value="">--Chọn cấp độ--</option>
+                                            <option value="Cấp 1">Cấp 1 (chăm sóc đặc biệt)</option>
+                                            <option value="Cấp 2">Cấp 2 (chăm sóc một phần)</option>
+                                            <option value="Cấp 3">Cấp 3 (tự chăm sóc)</option>
                                         </select>
                                         <MdExpandMore className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xl" />
                                     </div>

@@ -46,7 +46,7 @@ const DetailPatients = (props) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <InfoItem label="Họ và tên" value={activePatient.ho_ten} />
-                    <InfoItem label="Năm sinh" value={activePatient.nam_sinh} />
+                    <InfoItem label="Năm sinh" value={new Date(activePatient.nam_sinh).toLocaleDateString('vi-VN')} />
                     <InfoItem label="Giới tính" value={activePatient.gioi_tinh} />
                     <InfoItem label="Số điện thoại" value={activePatient.so_dien_thoai} />
                     <InfoItem label="Số BHYT" value={activePatient.so_bhyt} />

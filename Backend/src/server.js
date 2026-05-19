@@ -35,7 +35,8 @@ const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
 
 
-
+const doctorRoutes = require('./routes/doctorRoutes');
+app.use('/api/doctor', doctorRoutes);
 const PORT = 5000;
 app.listen(PORT, () => {
     console.log(`Server đang chạy tại: http://localhost:${PORT}`);

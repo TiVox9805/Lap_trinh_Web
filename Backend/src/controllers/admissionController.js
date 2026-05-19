@@ -3,7 +3,7 @@ const pool = require('../config/db');
 const addAdmission = async (req, res) => {
     const {
         ho_ten, nam_sinh, gioi_tinh, so_dien_thoai, dia_chi, so_bhyt,
-        khoa_id, bac_si_id, y_ta_id, chan_doan, ly_do, benh_su, nhom_mau
+        khoa_id, bac_si_id, y_ta_id, chan_doan, ly_do, benh_su, nhom_mau, cap_do
     } = req.body;
 
     if (!ho_ten || !khoa_id || !bac_si_id) {
@@ -19,15 +19,15 @@ const addAdmission = async (req, res) => {
         const insertPatientRes = await client.query(
             `INSERT INTO BenhNhan (ho_ten, nam_sinh, gioi_tinh, so_dien_thoai, dia_chi, so_bhyt) 
              VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-            [ho_ten, parseInt(nam_sinh), gioi_tinh, so_dien_thoai, dia_chi, so_bhyt]
+            [ho_ten, nam_sinh, gioi_tinh, so_dien_thoai, dia_chi, so_bhyt]
         );
 
         const newPatientId = insertPatientRes.rows[0].id;
 
         // BƯỚC 2: Thêm hồ sơ nhập viện bằng ID bệnh nhân vừa tạo
         const insertAdmissionRes = await client.query(
-            `INSERT INTO HoSoNhapVien (benh_nhan_id, khoa_id, bac_si_id,y_ta_id, chan_doan_ban_dau, ly_do_nhap_vien, benh_su, trang_thai_ho_so,nhom_mau) 
-             VALUES ($1, $2, $3, $4, $5, $6,$7, 'Chờ xếp giường',$8) RETURNING *`,
+            `INSERT INTO HoSoNhapVien (benh_nhan_id, khoa_id, bac_si_id,y_ta_id, chan_doan_ban_dau, ly_do_nhap_vien, benh_su, trang_thai_ho_so,nhom_mau,cap_do) 
+             VALUES ($1, $2, $3, $4, $5, $6,$7, 'Chờ xếp giường',$8,$9) RETURNING *`,
             [
                 newPatientId,
                 khoa_id,
@@ -36,7 +36,8 @@ const addAdmission = async (req, res) => {
                 chan_doan,
                 ly_do,
                 benh_su,
-                nhom_mau
+                nhom_mau,
+                cap_do
             ]
         );
 

@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { MdPersonOutline, MdAssignmentInd, MdLogout, MdInfoOutline, MdPerson, MdContactPage, MdMeetingRoom, MdKingBed, MdFingerprint, MdCake, MdWc, MdBloodtype, MdMonitorWeight, MdMedicalServices, MdHistory, MdCheck } from 'react-icons/md';
 
 const DoctorDischarge = () => {
+    const { id: patientIdFromUrl } = useParams();
     const [patients, setPatients] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
     const [loading, setLoading] = useState(true);
-    const selectedPatient = patients.find(p => p.id === selectedId);
+    const userData = JSON.parse(sessionStorage.getItem("user"));
+    const userId = userData ? userData.id : null;
 
     // Lấy danh sách bệnh nhân ĐANG ĐIỀU TRỊ
-    const fetchInTreatment = async () => {
+    const fetchInTreatment = useCallback(async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/patients/inpatient');
+            const res = await fetch(`http://localhost:5000/api/patients/inpatient/${userId}`);
             const data = await res.json();
             setPatients(data);
             setLoading(false);
@@ -18,13 +21,26 @@ const DoctorDischarge = () => {
             console.error("Lỗi lấy dữ liệu:", err);
             setLoading(false);
         }
-    };
+    }, [userId]);
 
     useEffect(() => {
         fetchInTreatment();
 
-    }, []);
+    }, [fetchInTreatment]);
+    useEffect(() => {
+        // Chỉ chạy khi đã tải xong danh sách bệnh nhân
+        if (!loading && patients.length > 0 && patientIdFromUrl) {
 
+            // Ép kiểu về Number để so sánh chính xác với dữ liệu DB
+            const targetId = parseInt(patientIdFromUrl);
+
+            const exists = patients.some(p => p.id === targetId);
+            if (exists) {
+                setSelectedId(targetId);
+            }
+        }
+    }, [loading, patients, patientIdFromUrl]);
+    const selectedPatient = patients.find(p => p.id === selectedId);
     // Xử lý lệnh Cho phép xuất viện
     const handleIssueDischargeOrder = async () => {
         if (!selectedPatient) return;

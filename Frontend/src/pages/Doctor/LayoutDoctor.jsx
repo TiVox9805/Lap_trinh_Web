@@ -91,7 +91,6 @@ const LayoutDoctor = () => {
                 isOpen={isOpenAdmission}
                 onClose={() => setIsOpenAdmission(false)}
             />
-
             {!isSettingsPage && <Navigation />}
 
             <div className="mt-4">

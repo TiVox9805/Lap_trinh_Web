@@ -8,18 +8,25 @@ import {
     MdAutoGraph,
     MdTrendingUp, MdCheckCircle, MdArrowForward
 } from "react-icons/md";
+import ExcelModal from "./HandleButton/ExcelModal";
 
 const SystemReport = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const now = new Date();
+        const year = now.getFullYear(); // Phải có dấu ()
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+    })
     const navigate = useNavigate();
     const handleGoToBedMap = () => {
         navigate("/admin/reports/AdminBedMap");
     }
     const fetchStats = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/admin/reports');
+            const res = await fetch(`http://localhost:5000/api/admin/reports/${selectedMonth}`);
             const data = await res.json();
             setStats(data);
         } catch (err) {
@@ -42,32 +49,17 @@ const SystemReport = () => {
             setIsRefreshing(false);
         }
     };
-    const handleExportExcel = () => {
-        // 1. Chuẩn bị dữ liệu theo dạng mảng các object (Hàng và Cột)
-        const dataForExcel = [
-            { "Hạng mục": "Tổng nhân sự", "Giá trị": stats.total_users },
-            { "Hạng mục": "Số lượng Bác sĩ", "Giá trị": stats.total_doctors },
-            { "Hạng mục": "Số lượng Y tá", "Giá trị": stats.total_nurses },
-            { "Hạng mục": "Bệnh nhân đang điều trị", "Giá trị": stats.active_patients },
-            { "Hạng mục": "Tổng số giường", "Giá trị": stats.total_beds },
-            { "Hạng mục": "Số giường đang sử dụng", "Giá trị": stats.occupied_beds },
-            { "Hạng mục": "Tỷ lệ lấp đầy", "Giá trị": stats.occupancy_rate },
-            { "Hạng mục": "Tài khoản hoạt động", "Giá trị": stats.active_account }
-        ];
-
-        // 2. Tạo một WorkSheet (Bảng tính)
-        const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
-
-        // 3. Tạo một WorkBook (File Excel)
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Báo cáo hệ thống");
-
-        // 4. Xuất file và tải về
-        XLSX.writeFile(workbook, `Bao-cao-benh-vien-${new Date().getTime()}.xlsx`);
+    const handleExportExcel = async () => {
+        try {
+            await ExcelModal(stats, selectedMonth);
+        } catch (error) {
+            console.error("Lỗi khi xuất file Excel:", error);
+            alert("Có lỗi xảy ra khi xuất file báo cáo!");
+        }
     };
     useEffect(() => {
         fetchStats();
-    }, []);
+    }, [selectedMonth]);
     if (loading) return (
         <div className="flex h-64 items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -79,8 +71,10 @@ const SystemReport = () => {
     const summaryData = [
         { label: "Tổng Nhân sự", value: stats.total_users, sub: "Tài khoản hệ thống", icon: <MdPeople />, color: "from-blue-500 to-blue-600", light: "bg-blue-50 text-blue-600" },
         { label: "Bác sĩ / Y tá", value: `${stats.total_doctors} : ${stats.total_nurses}`, sub: "Đội ngũ chuyên môn", icon: <MdMonitorHeart />, color: "from-emerald-500 to-emerald-600", light: "bg-emerald-50 text-emerald-600" },
-        { label: "Bệnh nhân", value: stats.active_patients, sub: "Đang điều trị nội trú", icon: <MdPeople />, color: "from-purple-500 to-purple-600", light: "bg-purple-50 text-purple-600" },
-        { label: "Lấp đầy Giường", value: stats.occupancy_rate, sub: "Hiệu suất sử dụng", icon: <MdAutoGraph />, color: "from-orange-500 to-orange-600", light: "bg-orange-50 text-orange-600" },
+        { label: "Bệnh nhân hiện tại", value: stats.active_patients, sub: "Đang điều trị nội trú", icon: <MdPeople />, color: "from-purple-500 to-purple-600", light: "bg-purple-50 text-purple-600" },
+        { label: "Bệnh nhân mới", value: stats.new_active_patients, sub: "Bệnh nhân nhập viện trong tháng này", icon: <MdPeople />, color: "from-cyan-500 to-cyan-600", light: "bg-cyan-50 text-cyan-600" },
+        { label: "Bệnh nhân xuất viện", value: stats.discharge_patients, sub: "Bệnh nhân xuát viện viện trong tháng này", icon: <MdPeople />, color: "from-amber-500 to-amber-600", light: "bg-amber-50 text-amber-600" },
+        { label: "Lấp đầy Giường", value: stats.occupancy_Rate_Month, sub: "Hiệu suất sử dụng", icon: <MdAutoGraph />, color: "from-orange-500 to-orange-600", light: "bg-orange-50 text-orange-600" },
     ];
 
     const occupancyPercent = parseFloat(stats.occupancy_rate);
@@ -110,6 +104,16 @@ const SystemReport = () => {
                         {isRefreshing ? "Đang tải..." : "Load dữ liệu"}
                     </button>
                 </div>
+            </div>
+            <div className="relative group min-w-[200px]">
+
+                <input
+                    type="month"
+                    value={selectedMonth}
+                    onClick={(e) => e.target.showPicker()}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="bg-white pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-2xl text-base font-black text-slate-700 shadow-inner transition-all duration-300 outline-none cursor-pointer shadow-xl shadow-slate-200/40 hover:bg-slate-100"
+                />
             </div>
 
             {/* 1. TOP STATS CARDS - Phong cách High-End */}
@@ -154,7 +158,7 @@ const SystemReport = () => {
                         <StatRow_New label="Admin" value={stats.total_users - stats.total_doctors - stats.total_nurses} total={stats.total_users} color="bg-purple-500" />
                         <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3">
                             <MdCheckCircle className="text-emerald-500 text-xl" />
-                            <p className="text-xs font-bold text-emerald-700">{stats.active_account} tài khoản đang ở trạng thái hoạt động bình thường</p>
+                            <p className="text-xs font-bold text-emerald-700">{stats.total_users} tài khoản đang ở trạng thái hoạt động bình thường</p>
                         </div>
                     </div>
                 </div>
@@ -165,7 +169,7 @@ const SystemReport = () => {
 
                     <div className="relative flex items-center justify-between mb-8">
                         <h3 className="font-black text-xl flex items-center gap-2 text-white">
-                            <MdBed className="text-orange-400" /> Tình trạng Giường bệnh
+                            <MdBed className="text-orange-400" /> Tình trạng Giường bệnh hiện tại
                         </h3>
                     </div>
 
@@ -215,7 +219,8 @@ const SystemReport = () => {
 
 // Component thanh tiến trình nhỏ cho nhân sự
 const StatRow_New = ({ label, value, total, color }) => {
-    const percent = (value / total) * 100;
+
+    const percent = total > 0 ? (value / total) * 100 : 0;
     return (
         <div className="space-y-1.5 hover:bg-slate-50 p-2 rounded-xl transition-colors">
             <div className="flex justify-between items-center text-sm">

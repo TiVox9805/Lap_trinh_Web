@@ -64,8 +64,8 @@ const addUser = async (req, res) => {
     try {
         const maNV = await generateUserCode(role, khoa_id);
         const newUser = await pool.query(
-            `INSERT INTO users (fullname, username, password, role, khoa_id, status, email_personal, phone, ma_nhan_vien) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            `INSERT INTO users (fullname, username, password, role, khoa_id, status, email_personal, phone, ma_nhan_vien,created_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,CURRENT_TIMESTAMP) RETURNING *`,
             [fullname, username, password, role, khoa_id, status, email_personal, phone, maNV]
         );
 

@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { MdDashboard, MdPeople, MdHotel, MdDescription } from "react-icons/md";
+import { MdDashboard, MdPeople, MdHotel, MdDescription, MdSend } from "react-icons/md";
 
 const Navigation = () => {
     const tabs = [
         { id: "ManagePatient", label: "Bệnh nhân", icon: <MdPeople size={20} /> },
-        { id: "DischargeProcessDoctor", label: "Quy trình xuất viện", icon: <MdDescription size={20} /> },
+        { id: "OrderEntry", label: "Gửi y lệnh", icon: <MdSend size={20} /> },
+        { id: "DischargeProcessDoctor/:id", label: "Quy trình xuất viện", icon: <MdDescription size={20} /> },
 
     ];
 

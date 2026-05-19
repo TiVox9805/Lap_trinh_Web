@@ -1,6 +1,6 @@
 import LayoutNurse from "../pages/Nurse/LayoutNurse";
-import Overview from "../pages/Components/Overview";
-import PatientList from "../pages/Components/Nurse/PatientList";
+import Overview from "../pages/Components/Nurse/Overview";
+import TaskList from "../pages/Components/Nurse/TaskList";
 import ArrangeBed from "../pages/Components/Nurse/ArrangeBed";
 import DischargeProcessNurse from "../pages/Components/Nurse/DischargeProcess";
 import DischargeProcessDoctor from "../pages/Components/Doctor/DischargeProcess";
@@ -15,6 +15,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminBedMap from "../pages/Components/Admin/AdminBedMap"
 import UserSettings from "../pages/shared/UserSettings";
+import OrderEntry from "../pages/Components/Doctor/OrderEntry";
 const AppRoutes = () => {
     return (
         <BrowserRouter>
@@ -32,7 +33,7 @@ const AppRoutes = () => {
                 >
                     <Route index element={<Navigate to="overview" replace />} />
                     <Route path="overview" element={<Overview />} />
-                    <Route path="patients" element={<PatientList />} />
+                    <Route path="TaskList" element={<TaskList />} />
                     <Route path="beds" element={<ArrangeBed />} />
                     <Route path="DischargeProcessNurse" element={<DischargeProcessNurse />} />
                     <Route path="settings" element={<UserSettings />} />
@@ -46,9 +47,10 @@ const AppRoutes = () => {
                     }
                 >
                     <Route index element={<Navigate to="ManagePatient" replace />} />
-                    <Route path="DischargeProcessDoctor" element={<DischargeProcessDoctor />} />
+                    <Route path="DischargeProcessDoctor/:id" element={<DischargeProcessDoctor />} />
                     <Route path="ManagePatient" element={<ManagePatient />} />
                     <Route path="settings" element={<UserSettings />} />
+                    <Route path="OrderEntry" element={<OrderEntry />} />
                 </Route>
                 <Route
                     path="/admin"
